@@ -31,7 +31,7 @@ public class CharacterizedPriMiRNA {
 
     private PriMiRNA priRNA;
     private PreMiRNA preRNA;
-    private MiRNA miRNA;
+    private MiRNAFeature miRNA;
 
     private String priStructLine1;
     private String priStructLine2;
@@ -56,17 +56,21 @@ public class CharacterizedPriMiRNA {
             (\\.*)                 : 0 or more             : unmatched bases at 3' end
             
      */
-    private static String regSL="(\\.*)(\\([\\.\\(]*\\()(\\.+)(\\)[\\.\\)]*\\))(\\.*)";
+    private static final String regSL="(\\.*)(\\([\\.\\(]*\\()(\\.+)(\\)[\\.\\)]*\\))(\\.*)";
                                 // (1)........(2).........(3).......(4)..........(5)
-    private Pattern stemLoopPattern = Pattern.compile(regSL);
+    private static final Pattern stemLoopPattern = Pattern.compile(regSL);
     private Matcher StemLoopMatch;
 
+    
+    
     public CharacterizedPriMiRNA(PriMiRNA pri){
         
         priRNA = pri;
         
     }
 
+    
+    
     /**
      * parse features of pri-miRNA
      */
@@ -116,7 +120,7 @@ public class CharacterizedPriMiRNA {
     public void defineAndCharacterizePreMiPair(int miRStartPos, int miRLength){
 
         preRNA = new PreMiRNA();
-        miRNA = new MiRNA();
+        miRNA = new MiRNAFeature();
 
         int strand=findStrand(priRNA, miRStartPos, miRLength);
         int upperStart=0, upperEnd=0;
@@ -148,15 +152,17 @@ public class CharacterizedPriMiRNA {
         
         String dangle;
 
-        if (strand == 5) {
-            upperStart = strIndex[miRStartPos];//count from 0
-            upperEnd = strIndex[miRStartPos + miRLength - 1];//count from 0
-
-        } else if (strand == 3) {
-            upperStart = strIndex[miRStartPos + miRLength - 1];
-            upperEnd = strIndex[miRStartPos];
+        switch(strand){
+            case 5:
+                upperStart = strIndex[miRStartPos];//count from 0
+                upperEnd = strIndex[miRStartPos + miRLength - 1];//count from 0
+                break;
+            case 3:
+                upperStart = strIndex[miRStartPos + miRLength - 1];
+                upperEnd = strIndex[miRStartPos];
+                break;
+            default:
         }
-        else return;
 
         // all positions below count from 1
 
@@ -252,19 +258,19 @@ public class CharacterizedPriMiRNA {
 
         miRNA.setNumberOfPairedBases(pairCount(miRStructLine2));
 
-        miRNA.setNumberOfUnpairedBases(unpairedCount(miRStructLine1, miRStructLine4));
-        miRNA.setFractOfUnpairedBases(calcUnpairedRate(miRNA.getUnpairedBase_num(), miRNA.getNumberOfPairs()));
+        miRNA.setNumOfUnpairedBases(unpairedCount(miRStructLine1, miRStructLine4));
+        miRNA.setFractOfUnpairedBases(calcUnpairedRate(miRNA.getNumOfUnpairedBases(), miRNA.getNumberOfPairs()));
 
         miRNA.setNumOfInternalLoops(internalLoopCount(miRStructLine2));
         miRNA.setLargestInternalLoop(findLargestInternalLoopOnStem(miRStructLine1, miRStructLine4));
 
         miRNA.setFirstBase(priRNA.getSeq().charAt(miRStartPos));
-        miRNA.setMiRNAStartPos(miRStartPos + 1);
-        miRNA.setMiRNAEndPos(miRStartPos + miRLength);
+        miRNA.setStartPos(miRStartPos + 1);
+        miRNA.setEndPos(miRStartPos + miRLength);
         miRNA.setAbsStartInQuerySeq(miRStartPos + priRNA.getStart()); // <- what is this start pos?? position within the full sequence I think
         miRNA.setAbsEndInQuerySeq(miRNA.getStart() + miRLength - 1);
         miRNA.setLength(miRLength);
-        miRNA.setStrand(strand);
+        miRNA.setStrand(String.valueOf(strand));
         
         //miRNA dangle (SR: I think this can only be up to 2 nt)
         if (strand == 5) {
@@ -282,7 +288,33 @@ public class CharacterizedPriMiRNA {
         miRNA.setID(miRNA.getName() + "_MIR_" + miRNA.getStart()
                 + "-" + miRNA.getLength());
 
-        miRNA.buildFeatureSet();
+        
+        miRNA.addFeature("miRNA_id",                  miRNA.getId());
+        miRNA.addFeature("miRNA_sequence",            miRNA.getSeq());
+        miRNA.addFeature("miRNA_structure",           miRNA.getStructureStr());
+        miRNA.addFeature("miRNA_energy",              String.valueOf(miRNA.getEnergy()));
+        miRNA.addFeature("miRNA_size",                String.valueOf(miRNA.getLength()));
+        miRNA.addFeature("miRNA_GC_content",          String.valueOf(miRNA.getGC_content() ));
+        miRNA.addFeature("miRNA_A_content",           String.valueOf(miRNA.getA_content()));
+        miRNA.addFeature("miRNA_U_content",           String.valueOf(miRNA.getU_content()));
+        miRNA.addFeature("miRNA_G_content",           String.valueOf(miRNA.getG_content()));
+        miRNA.addFeature("miRNA_C_content",           String.valueOf(miRNA.getC_content()));
+        miRNA.addFeature("miRNA_pair_number",         String.valueOf(miRNA.getNumberOfPairs()));
+        miRNA.addFeature("miRNA_G-U_number",          String.valueOf(miRNA.getGU_num()));
+        miRNA.addFeature("miRNA_unpair_number",       String.valueOf(miRNA.getNumOfUnpairedBases()));
+        miRNA.addFeature("miRNA_unpair_rate",         String.valueOf(miRNA.getFractOfUnpairedBases()));
+        miRNA.addFeature("miRNA_internalLoop_number", String.valueOf(miRNA.getNumOfInternalLoops()));
+        miRNA.addFeature("miRNA_internalLoop_size",   String.valueOf(miRNA.getLargestInternalLoop()));
+        miRNA.addFeature("miRNA_start",               String.valueOf(miRNA.getMiStart()));
+        miRNA.addFeature("miRNA_end",                 String.valueOf(miRNA.getMiEnd()));
+        miRNA.addFeature("miRNA_stability",           String.valueOf(miRNA.getStability()));
+        miRNA.addFeature("miRNA_firstBase",           String.valueOf(miRNA.getFirstBase()));
+        miRNA.addFeature("overhang_base1",            String.valueOf(miRNA.getDangleBaseOne()));
+        miRNA.addFeature("overhang_base2",            String.valueOf(miRNA.getDangleBaseTwo()));
+        miRNA.addFeature("strand",                    miRNA.getStrand());
+
+        miRNA.addFeature("miStart",                   String.valueOf(miRNA.getStart()));
+        miRNA.addFeature("miEnd",                     String.valueOf(miRNA.getEnd()));
 
         //store product in priRNA
 //        preRNA.addProduct(miRNA);

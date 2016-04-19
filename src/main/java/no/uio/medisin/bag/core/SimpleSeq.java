@@ -12,12 +12,17 @@ package no.uio.medisin.bag.core;
  * @author weibo
  */
 public class SimpleSeq {
-    private String id="";
-    private String seq="";
-    private int length=0;
-    private int start=0;
-    private int end=0;
-    private String name="";
+    
+    
+    private String          id="";
+    private String          seq="";
+    private int             length=0;
+    private int             start=0;
+    private int             end=0;
+    private String          chromosome="";
+    private String          strand;
+    private String          name="";
+    private String          accessionNumber;
 
 
     /**
@@ -45,6 +50,23 @@ public class SimpleSeq {
     
     
     
+    /**
+     * summarize the sequence properties
+     * 
+     * @return 
+     */
+    @Override
+    public String toString(){
+        String str = "ID:" + this.getId() + "\t"
+                    + "Name::" + this.getName() + "\t"
+                    + "Start:" + this.getStart() + "\t"
+                    + "End:" + this.getEnd() + "\t"
+                    + "Len:" + this.getLength() + "\t"
+          + "\n";
+        return str;
+    }
+
+
     /**
      * return subsequence at specified position
      * 
@@ -153,6 +175,36 @@ public class SimpleSeq {
     }
 
 
+    /**
+     * count occurrence of a specific nucleotide within the specified sequence
+     * 
+     * @param qSeq
+     * @param nt
+     * @return 
+     */
+    public static int NTcount(String qSeq, char nt){
+        char[] cs=qSeq.toCharArray();
+        int n=0;
+        for(char c:cs){
+            if(c==nt){
+                n++;
+            }
+        }
+        return n;
+    }
+    
+    
+    
+    
+    /**
+     * count occurrence of a specific nucleotide within the defined sequence
+     * 
+     * @param nt
+     * @return 
+     */
+    public int NTcount(char nt){
+        return NTcount(seq, nt);
+    }
 
     /**
      * @return the id
@@ -236,6 +288,48 @@ public class SimpleSeq {
      */
     public void setName(String name) {
         this.name = name;
+    }
+
+    /**
+     * @return the accessionNumber
+     */
+    public String getAccessionNumber() {
+        return accessionNumber;
+    }
+
+    /**
+     * @param accessionNumber the accessionNumber to set
+     */
+    public void setAccessionNumber(String accessionNumber) {
+        this.accessionNumber = accessionNumber;
+    }
+
+    /**
+     * @return the chromosome
+     */
+    public String getChromosome() {
+        return chromosome;
+    }
+
+    /**
+     * @param chromosome the chromosome to set
+     */
+    public void setChromosome(String chromosome) {
+        this.chromosome = chromosome;
+    }
+
+    /**
+     * @return the strand
+     */
+    public String getStrand() {
+        return strand;
+    }
+
+    /**
+     * @param strand the strand to set
+     */
+    public void setStrand(String strand) {
+        this.strand = strand;
     }
 
     

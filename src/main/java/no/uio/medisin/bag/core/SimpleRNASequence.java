@@ -45,12 +45,12 @@ public class SimpleRNASequence extends SimpleSeq {
      * @param seq 
      */
     public SimpleRNASequence(SimpleSeq seq){
-        this.setID(seq.getId());
-        this.setName(seq.getName());
-        this.setSeq(seq.getSeq());
-        this.setAbsStartInQuerySeq(seq.getStart());
-        this.setAbsEndInQuerySeq(seq.getEnd());
-        this.setLength(seq.getLength());
+        super.setID(seq.getId());
+        super.setName(seq.getName());
+        super.setSeq(seq.getSeq());
+        super.setAbsStartInQuerySeq(seq.getStart());
+        super.setAbsEndInQuerySeq(seq.getEnd());
+        super.setLength(seq.getLength());
     }
     
     
@@ -65,17 +65,12 @@ public class SimpleRNASequence extends SimpleSeq {
     private float       G_content=0;
     private float       C_content=0;
 
+    private String      priStructLine1;
+    private String      priStructLine2;
+    private String      priStructLine3;
+    private String      priStructLine4;
     
-    @Override
-    public String toString(){
-        String str = "ID:" + this.getId() + "\t"
-                    + "Name::" + this.getName() + "\t"
-                    + "Start:" + this.getStart() + "\t"
-                    + "End:" + this.getEnd() + "\t"
-                    + "Len:" + this.getLength() + "\t"
-          + "\n";
-        return str;
-    }
+    
     /**
      * @return str
      */

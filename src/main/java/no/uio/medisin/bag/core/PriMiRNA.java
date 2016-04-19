@@ -34,10 +34,10 @@ public class PriMiRNA extends SimpleRNASequence{
     private int         internalLoop_num = 0;
     private int         numberOfUnpairedBasesInStem = 0;
     private double      unpairedBaseRate = 0;
-    private String      seq5;                       // 5' seq of pri
-    private String      str5;                       // 5' structure of pri
-    private String      seq3;                       // 3' seq of pri
-    private String      str3;                       // 3' structure of pri
+    private String      seq5;                       // 5' seq of pri-miRNA
+    private String      str5;                       // 5' structure of pri-miRNA
+    private String      seq3;                       // 3' seq of pri-miRNA
+    private String      str3;                       // 3' structure of pri-miRNA
     private String      midBase;                    // mid-base of terminal loop (can be empty)
     private String      priLine1;                   // unpaired nt on 5' arm in the pretty plot
     private String      priLine2;                   // paired nt on 5' arm in the pretty plot
@@ -49,7 +49,7 @@ public class PriMiRNA extends SimpleRNASequence{
     private HashMap     featureSet;
 
 
-    private ArrayList<PreMiRNA> pres=new ArrayList<PreMiRNA>();
+    private ArrayList<PreMiRNA> pres = new ArrayList<>();
     private int index=0;
 
     public void addProduct(PreMiRNA preRNA){

@@ -13,52 +13,84 @@ import org.apache.logging.log4j.Logger;
 
 
 /**
- * stores an miRBase entry
+ * stores an miRNA entry, while this may seem a cumbersome implementation, the most
+ * miRNAs found in a mammalian is less than 3000, so we shouldn't be too worried 
+ * about overheads
+ * 
  * This needs to be made comparable so the entries stored in a list can be sorted
  * to speed things up
  * 
  * @author sr
  */
-public class MiRNAFeature {
+public class MiRNAFeature extends SimpleRNASequence{
 
-    static Logger                       logger                      = LogManager.getLogger();
+    static Logger               logger                      = LogManager.getLogger();
     
-    private String mimatID;
-    private String note;
-    private String name;
-    private String parent;
-    private String chromosome;
-    private int    startPos;
-    private int    endPos;
-    private String strand;
-    private String sequence;
-    private String isomiRString;
+    private static final int        QUALIFIER_START_COL     =   21;
+    private static final String     QUALIFIER_ACCESSION     =   "/accession";
+    private static final String     QUALIFIER_PRODUCT       =   "/product";
+    private static final String     QUALIFIER_EVIDENCE      =   "/evidence";
+    private static final String     QUALIFIER_EXPERIMENT    =   "/experiment";
+    private String              mimatID;
+    private String              note;
+    private String              name;
+    private String              parent;
+    private String              chromosome;
+    private int                 startPos;
+    private int                 endPos;
+    private String              strand;
+    private String              seq;
+    private String              isomiRString;
+    private HashMap             featureSet = new HashMap();     // stores additional characteristics of this miRNA
+    
+    private String              evidence="";
+    private String              references="";                     // string of ";" delimited pubmed IDs
     
     
+    private String              host;
+    
+    private int                 largestInternalBulge;
+    private int                 numOfBulges;
+    private int                 numOfUnpairedBases;
+    private double              fractOfUnpairedBases;
+
+    private char                firstBase;
+    private double              stability;
+    private char                dangleBaseOne;
+    private char                dangleBaseTwo;
+
+    private int                 miStart;
+    private int                 miEnd;
+
+    
+    // for storing isomiR information
     //(name + ";" + start + ";" + cigar + ";" + md + ";" + seq + "\t")
     
-    private static final int NAMECOL    = 0;
-    private static final int STARTCOL   = 1;
-    private static final int CIGARCOL   = 2;
-    private static final int MDCOL      = 3;
-    private static final int SEQCOL     = 4;
+    private static final int    NAMECOL    = 0;
+    private static final int    STARTCOL   = 1;
+    private static final int    CIGARCOL   = 2;
+    private static final int    MDCOL      = 3;
+    private static final int    SEQCOL     = 4;
     
     
 
+    public MiRNAFeature(){
+        
+    }
     
     /**
      * Constructor specifying name, location and sequence of an miRNA
      * (ideal for predicted miRNAs)
      * 
-     * @param n String      name
-     * @param c String      chromosome
-     * @param s int         start position
-     * @param e int         end position
-     * @param t String      Strand
+     * @param cName     String      name
+     * @param cChrom    String      chromosome
+     * @param cStart    int         start position
+     * @param cEnd      int         end position
+     * @param cStrand   String      Strand
      * 
      */
-    public MiRNAFeature(String n, String c, int s, int e, String t){
-        this(n, c, s, e, t, "", "", "");
+    public MiRNAFeature(String cName, String cChrom, int cStart, int cEnd, String cStrand){
+        this(cName, cChrom, cStart, cEnd, cStrand, "", "", "");
     }
     
     
@@ -67,25 +99,25 @@ public class MiRNAFeature {
      * Constructor specifying name, location and sequence of an miRNA
      * (ideal for miRBase entry miRNAs)
      * 
-     * @param n String      name
-     * @param c String      chromosome
-     * @param s int         start position
-     * @param e int         end position
-     * @param t String      Strand
-     * @param m String      MIMAT (miRBase) ID
-     * @param p String      MI (miRBase) Parent ID
-     * @param seq :     String sequence
+     * @param cName     String      name
+     * @param cChrom    String      chromosome
+     * @param cStart    int         start position
+     * @param cEnd      int         end position
+     * @param cStrand   String      Strand
+     * @param cMIMAT    String      MIMAT (miRBase) ID
+     * @param cParentID String      MI (miRBase) Parent ID
+     * @param cSeq      String      sequence
      * 
      */
-    public MiRNAFeature(String n, String c, int s, int e, String t, String m, String p, String seq){
-        name = n;
-        chromosome = c;
-        startPos = s;
-        endPos = e;
-        strand = t;
-        parent = p;
-        mimatID = m;
-        sequence = seq;
+    public MiRNAFeature(String cName, String cChrom, int cStart, int cEnd, String cStrand, String cMIMAT, String cParentID, String cSeq){
+        name = cName;
+        chromosome = cChrom;
+        startPos = cStart;
+        endPos = cEnd;
+        strand = cStrand;
+        parent = cParentID;
+        mimatID =cMIMAT;
+        seq = cSeq;
         isomiRString = "";
         
     }
@@ -100,10 +132,30 @@ public class MiRNAFeature {
         strand          = m.strand;
         parent          = m.parent;
         mimatID         = m.mimatID;
-        sequence        = m.sequence;
+        seq             = m.seq;
         isomiRString    = m.isomiRString;
         
     }
+    
+    
+    
+    
+    /**
+     * Add feature to set
+     * 
+     * @param key
+     * @param value
+     * @return 
+     */
+    public int addFeature(String key, String value){
+        featureSet.put(key, value);
+        return featureSet.size();
+    }
+    
+    
+    
+    
+    
     /**
      * checks whether Chromosome strings are the same, while attempting
      * to allow for the presence or absence of a variation on the 'Chr' 
@@ -147,6 +199,28 @@ public class MiRNAFeature {
         
     }
         
+    
+    /**
+     * characterize this miRNA
+     * some of the features can only be characterized from the parent pri-miRNA
+     * 
+     * @return 
+     */
+    public HashMap characterize(){
+        HashMap characteristics = new HashMap();
+        
+        return characteristics;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     /**
      * add information to define an isomiR for this entry
@@ -356,7 +430,7 @@ public class MiRNAFeature {
 
                 
                 if(this.getStrand().equals("+")){
-                    logger.debug(this.sequence + "\n" + isomiR.split(";")[SEQCOL]);
+                    logger.debug(this.seq + "\n" + isomiR.split(";")[SEQCOL]);
                     if(isoStart != this.startPos){                   
                         noOf5pSteps = isoStart - this.startPos;                   
                     }
@@ -365,7 +439,7 @@ public class MiRNAFeature {
                         noOf3pSteps = isoEnd - this.getEndPos();
                     }
                     logger.debug(noOf5pSteps + ", " + noOf3pSteps);
-                    logger.debug(isoStart + ", " + isoEnd + ", " + (this.startPos- isoStart) + ", " + sequence.length());
+                    logger.debug(isoStart + ", " + isoEnd + ", " + (this.startPos- isoStart) + ", " + seq.length());
 
                     if(this.startPos >= isoStart ){
                         wStart = 0;
@@ -377,22 +451,22 @@ public class MiRNAFeature {
                     }
 
                     if(this.endPos < isoEnd){
-                        wEnd = sequence.length(); 
+                        wEnd = seq.length(); 
                         iEnd = isoSeq.length() - (isoEnd - this.endPos);
                     }
                     else{
-                        wEnd = sequence.length() - (this.endPos - isoEnd);
+                        wEnd = seq.length() - (this.endPos - isoEnd);
                         iEnd = isoSeq.length();
                     }
 
-                    if(sequence.substring(wStart, wEnd).replace("U", "T").equals(isoSeq.substring(iStart, iEnd))==false){
+                    if(seq.substring(wStart, wEnd).replace("U", "T").equals(isoSeq.substring(iStart, iEnd))==false){
                         for(int b=0; b<wEnd-wStart; b++){
-                            if(sequence.charAt(wStart + b) != isoSeq.charAt(iStart + b)) noOfPolySteps++;
+                            if(seq.charAt(wStart + b) != isoSeq.charAt(iStart + b)) noOfPolySteps++;
                         }
                     }
                 }
                 else{
-                    logger.debug(this.sequence + "\t" + startPos + "\t" + endPos + "\n");
+                    logger.debug(this.seq + "\t" + startPos + "\t" + endPos + "\n");
                     logger.debug(SimpleSeq.complement(isomiR.split(";")[SEQCOL]) + "\t" + isoStart + "\t" + isoEnd + "\n");
                     
                     if(isoStart != this.startPos){                   
@@ -403,7 +477,7 @@ public class MiRNAFeature {
                         noOf3pSteps = isoEnd - this.getEndPos();
                     }
                     logger.debug(noOf5pSteps + ", " + noOf3pSteps);
-                    logger.debug(isoStart + ", " + isoEnd + ", " + (this.startPos- isoStart) + ", " + sequence.length());
+                    logger.debug(isoStart + ", " + isoEnd + ", " + (this.startPos- isoStart) + ", " + seq.length());
 
                     if(this.startPos >= isoStart ){
                         wStart = 0;
@@ -415,16 +489,16 @@ public class MiRNAFeature {
                     }
 
                     if(this.endPos < isoEnd){
-                        wEnd = sequence.length(); 
+                        wEnd = seq.length(); 
                         iEnd = isoSeq.length() - (isoEnd - this.endPos);
                     }
                     else{
-                        wEnd = sequence.length() - (this.endPos - isoEnd);
+                        wEnd = seq.length() - (this.endPos - isoEnd);
                         iEnd = isoSeq.length();
                     }
 
-                    if(sequence.substring(wStart, wEnd).replace("U", "T").equals(SimpleSeq.complement(isoSeq.substring(iStart, iEnd)))==false){
-                        String complementWTSeq = SimpleSeq.complement(sequence);
+                    if(seq.substring(wStart, wEnd).replace("U", "T").equals(SimpleSeq.complement(isoSeq.substring(iStart, iEnd)))==false){
+                        String complementWTSeq = SimpleSeq.complement(seq);
                         for(int b=0; b<wEnd-wStart; b++){
                             if(complementWTSeq.charAt(wStart + b) != isoSeq.charAt(iStart + b)) noOfPolySteps++;
                         }
@@ -509,6 +583,106 @@ public class MiRNAFeature {
         }
         return isomiRMaxStop;
         
+    }
+    
+    
+    
+    /**
+     * this will only parse miRNA entries defined in EMBL format in the miRNA.dat
+     * file released by miRBase. i.e., only a subset of qualifies are recognized
+     * e.g. 
+     * 
+     *  FT   miRNA           17..38
+     *  FT                   /accession="MIMAT0000001"
+     *  FT                   /product="cel-let-7-5p"
+     *  FT                   /evidence=experimental
+     *  FT                   /experiment="cloned [1-3], Northern [1], PCR [4], 454 [5],
+     *  FT                   Illumina [6], CLIPseq [7]"
+     * 
+     * @param emblLines
+     */
+    public void parseMiRBaseMiRNAlines(ArrayList<String> emblLines){
+        String lastQualifier = "";
+        for(String emblLine:emblLines){
+            // header line
+            if(emblLine.split("\\s+")[1].trim().equals("miRNA")){
+                this.miStart= Integer.parseInt(emblLine.substring(QUALIFIER_START_COL, emblLine.indexOf("..")));
+                this.miEnd=Integer.parseInt(emblLine.substring(emblLine.indexOf("..")+2).trim());
+                continue;
+            }
+            
+            // key / value entries
+            String qualifier;
+            if(emblLine.contains("="))
+                qualifier = emblLine.substring(QUALIFIER_START_COL, emblLine.indexOf("="));
+            else
+                qualifier="";
+            
+            switch(qualifier){
+                case QUALIFIER_ACCESSION:
+                    this.mimatID = emblLine.substring(emblLine.indexOf("=")+1).replaceAll("\"", "");
+                    lastQualifier = QUALIFIER_ACCESSION;
+                    break;
+                    
+                case QUALIFIER_PRODUCT:
+                    this.name = emblLine.substring(emblLine.indexOf("=")+1).replaceAll("\"", "");
+                    lastQualifier = QUALIFIER_PRODUCT;
+                    break;
+                    
+                case QUALIFIER_EVIDENCE:
+                    this.evidence = emblLine.substring(emblLine.indexOf("=")+1).replaceAll("\"", "");
+                    lastQualifier = QUALIFIER_EVIDENCE;
+                    break;
+                    
+                case QUALIFIER_EXPERIMENT:
+                    this.references = emblLine.substring(emblLine.indexOf("=")+1).replaceAll("\"", "");
+                    lastQualifier = QUALIFIER_EXPERIMENT;
+                    break;
+                    
+                default:
+                    concatKeyValue(emblLine, lastQualifier);
+            }
+        }
+    }
+    
+    
+    /**
+     * this handles continuation lines in the key/value entry. It should only be 
+     * called from @see parseMiRBaseMiRNAlines(ArrayList<String> emblLines). it 
+     * is only included in a separate method for readability
+     * 
+     * @param emblLine
+     * @param lastQualifier
+     * @return 
+     */
+    private String concatKeyValue(String emblLine, String lastQualifier){
+        
+        switch(lastQualifier){
+            case QUALIFIER_ACCESSION:
+                this.mimatID = mimatID.concat(emblLine.substring(QUALIFIER_START_COL).replaceAll("\"", "") + " ");
+                lastQualifier = QUALIFIER_ACCESSION;
+                break;
+
+            case QUALIFIER_PRODUCT:
+                this.name = name.concat(emblLine.substring(QUALIFIER_START_COL).replaceAll("\"", "") + " ");
+                lastQualifier = QUALIFIER_ACCESSION;
+                break;
+
+            case QUALIFIER_EVIDENCE:
+                this.evidence = evidence.concat(emblLine.substring(QUALIFIER_START_COL).replaceAll("\"", "") + " ");
+                lastQualifier = QUALIFIER_ACCESSION;
+                break;
+
+            case QUALIFIER_EXPERIMENT:
+                this.references = references.concat(emblLine.substring(QUALIFIER_START_COL).replaceAll("\"", "") + " ");
+                lastQualifier = QUALIFIER_ACCESSION;
+                break;
+
+            default:
+      
+        }                    
+      
+        return lastQualifier;
     }
     
     
@@ -633,14 +807,14 @@ public class MiRNAFeature {
      * @return the sequence
      */
     public String getSequence() {
-        return sequence;
+        return seq;
     }
 
     /**
      * @param sequence the sequence to set
      */
     public void setSequence(String sequence) {
-        this.sequence = sequence;
+        this.seq = sequence;
     }
 
     /**
@@ -704,6 +878,195 @@ public class MiRNAFeature {
      */
     public void setNote(String note) {
         this.note = note;
+    }
+
+    /**
+     * @return the host
+     */
+    public String getHost() {
+        return host;
+    }
+
+    /**
+     * @param host the host to set
+     */
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    /**
+     * @return the largestInternalLoop
+     */
+    public int getLargestInternalLoop() {
+        return largestInternalBulge;
+    }
+
+    /**
+     * @param largestInternalLoop the largestInternalLoop to set
+     */
+    public void setLargestInternalLoop(int largestInternalLoop) {
+        this.largestInternalBulge = largestInternalLoop;
+    }
+
+    /**
+     * @return the numOfInternalLoops
+     */
+    public int getNumOfInternalLoops() {
+        return numOfBulges;
+    }
+
+    /**
+     * @param numOfInternalLoops the numOfInternalLoops to set
+     */
+    public void setNumOfInternalLoops(int numOfInternalLoops) {
+        this.numOfBulges = numOfInternalLoops;
+    }
+
+    /**
+     * @return the numOfUnpairedBases
+     */
+    public int getNumOfUnpairedBases() {
+        return numOfUnpairedBases;
+    }
+
+    /**
+     * @param numOfUnpairedBases the numOfUnpairedBases to set
+     */
+    public void setNumOfUnpairedBases(int numOfUnpairedBases) {
+        this.numOfUnpairedBases = numOfUnpairedBases;
+    }
+
+    /**
+     * @return the fractOfUnpairedBases
+     */
+    public double getFractOfUnpairedBases() {
+        return fractOfUnpairedBases;
+    }
+
+    /**
+     * @param fractOfUnpairedBases the fractOfUnpairedBases to set
+     */
+    public void setFractOfUnpairedBases(double fractOfUnpairedBases) {
+        this.fractOfUnpairedBases = fractOfUnpairedBases;
+    }
+
+    /**
+     * @return the firstBase
+     */
+    public char getFirstBase() {
+        return firstBase;
+    }
+
+    /**
+     * @param firstBase the firstBase to set
+     */
+    public void setFirstBase(char firstBase) {
+        this.firstBase = firstBase;
+    }
+
+    /**
+     * @return the stability
+     */
+    public double getStability() {
+        return stability;
+    }
+
+    /**
+     * @param stability the stability to set
+     */
+    public void setStability(double stability) {
+        this.stability = stability;
+    }
+
+    /**
+     * @return the dangleBaseOne
+     */
+    public char getDangleBaseOne() {
+        return dangleBaseOne;
+    }
+
+    /**
+     * @param dangleBaseOne the dangleBaseOne to set
+     */
+    public void setDangleBaseOne(char dangleBaseOne) {
+        this.dangleBaseOne = dangleBaseOne;
+    }
+
+    /**
+     * @return the dangleBaseTwo
+     */
+    public char getDangleBaseTwo() {
+        return dangleBaseTwo;
+    }
+
+    /**
+     * @param dangleBaseTwo the dangleBaseTwo to set
+     */
+    public void setDangleBaseTwo(char dangleBaseTwo) {
+        this.dangleBaseTwo = dangleBaseTwo;
+    }
+
+    /**
+     * @return the miStart
+     */
+    public int getMiStart() {
+        return miStart;
+    }
+
+    /**
+     * @param miStart the miStart to set
+     */
+    public void setMiStart(int miStart) {
+        this.miStart = miStart;
+    }
+
+    /**
+     * @return the miEnd
+     */
+    public int getMiEnd() {
+        return miEnd;
+    }
+
+    /**
+     * @param miEnd the miEnd to set
+     */
+    public void setMiEnd(int miEnd) {
+        this.miEnd = miEnd;
+    }
+
+    /**
+     * @return the featureSet
+     */
+    public HashMap getFeatureSet() {
+        return featureSet;
+    }
+
+    /**
+     * @return the evidence
+     */
+    public String getEvidence() {
+        return evidence;
+    }
+
+    /**
+     * @param evidence the evidence to set
+     */
+    public void setEvidence(String evidence) {
+        this.evidence = evidence;
+    }
+
+    /**
+     * @return the references
+     */
+    public String getReferences() {
+        return references;
+    }
+
+    /**
+     * @param references the references to set
+     */
+    public void setReferences(String references) {
+        this.references = references;
     }
     
 }

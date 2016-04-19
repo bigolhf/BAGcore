@@ -5,14 +5,12 @@
 
 package no.uio.medisin.bag.core;
 
-import no.uio.medisin.bag.core.MiRNA;
-import no.uio.medisin.bag.core.SimpleRNASequence;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
  *
- * @author weibo
+ * @author weibo / simon rayner
  */
 public class PreMiRNA extends SimpleRNASequence{
 
@@ -23,75 +21,102 @@ public class PreMiRNA extends SimpleRNASequence{
         super(id,seq);
     }
 
-    private int maxInternalLoopSize=0;
-    private int numOfInternalLoops=0;
-    private int numOfUnpairedBases=0;
-    private double fractOfUnpairedBases=0;
+    private String              host                            ="";
+    private String              host3code                       ="";
+    private String              note                           ="";
+    private String              dbxrefs                         ="";
+    
+    private int                 maxInternalLoopSize             =0;
+    private int                 numOfInternalLoops              =0;
+    private int                 numOfUnpairedBases              =0;
+    private double              fractOfUnpairedBases            =0;
 
-    private int lowerStemSize=0;
-    private int upperStemSize=0;
-    private int topStemSize=0;
-    private int upperStart=0;
-    private int upperEnd=0;
-    private int largestInternalLoopInLowerStem=0;
-    private int largestInternalLoopInTopStem=0;
-    private int numOfInternalLoopsInLowerStem=0;
-    private int numOfInternalLoopsInTopStem=0;
-    private int numOfUnpairedBasesInLowerStem=0;
-    private int numOfUnpairedBasesInTopStem=0;
-    private double fractOfUnpairedBasesInLowerStem=0;
-    private double fractOfUnpairedBasesInTopStem=0;
+    private int                 lowerStemSize                   =0;
+    private int                 upperStemSize                   =0;
+    private int                 topStemSize                     =0;
+    private int                 upperStart                      =0;
+    private int                 upperEnd                        =0;
+    private int                 largestInternalLoopInLowerStem  =0;
+    private int                 largestInternalLoopInTopStem    =0;
+    private int                 numOfInternalLoopsInLowerStem   =0;
+    private int                 numOfInternalLoopsInTopStem     =0;
+    private int                 numOfUnpairedBasesInLowerStem   =0;
+    private int                 numOfUnpairedBasesInTopStem     =0;
+    private double              fractOfUnpairedBasesInLowerStem =0;
+    private double              fractOfUnpairedBasesInTopStem   =0;
 
-    private HashMap featureSet;
+    private HashMap             featureSet;
 
-    private ArrayList<MiRNA> miRNAList=new ArrayList<MiRNA>();
+    private ArrayList<MiRNAFeature>         miRNAList           = new ArrayList<>();
+    private ArrayList<ShortPubMedEntry>     pubmedRefList       = new ArrayList<>();
+    
     private int index=0;
 
-    public void addProduct(MiRNA miRNA){
+    public void addProduct(MiRNAFeature miRNA){
         miRNAList.add(miRNA);
         index+=1;
     }
 
+    /**
+     * add pubmed reference to this pre-miRNA
+     * 
+     * @param newRef 
+     */
+    public void addPubmedRef(ShortPubMedEntry newRef){
+        pubmedRefList.add(newRef);
+    }
 
+    /**
+     * return number of miRNAs associated with this pre-miRNA
+     * 
+     * @return 
+     */
     public int SizeOfProduct(){
         return miRNAList.size();
     }
 
-    public MiRNA NextMiRNA(){
+    
+    public MiRNAFeature NextMiRNA(){
         index-=1;
         return miRNAList.get(index);
     }
 
+    
+    /**
+     * because the list of features we might calculate can change, we also store
+     * in a hash map to make it simpler to collectively pass information
+     */
     public void buildFeatureSet(){
         featureSet=new HashMap();
-        featureSet.put("preRNA_sequence", this.getSeq());
-        featureSet.put("preRNA_structure", this.getStructureStr());
-        featureSet.put("preRNA_energy", this.getEnergy());
-        featureSet.put("preRNA_size", this.getLength());
-        featureSet.put("preRNA_GC_content", this.getGC_content() );
-        featureSet.put("preRNA_A_content", this.getA_content());
-        featureSet.put("preRNA_U_content", this.getU_content());
-        featureSet.put("preRNA_G_content", this.getG_content());
-        featureSet.put("preRNA_C_content", this.getC_content());
-        featureSet.put("preRNA_pair_number", this.getNumberOfPairs());
-        featureSet.put("preRNA_G-U_number", this.getGU_num());
-        featureSet.put("preRNA_unpair_number", this.getUnpairedBase_num());
-        featureSet.put("preRNA_unpair_rate", this.getUnpairedBase_rate());
-        featureSet.put("preRNA_internalLoop_number", this.getInternalLoop_num());
-        featureSet.put("preRNA_internalLoop_size", this.getInternalLoopSize());
-        featureSet.put("upperStem_start", this.getUpperStart());
-        featureSet.put("upperStem_end", this.getUpperEnd());
-        featureSet.put("upperStem_size", this.getUpperStemSize());
-        featureSet.put("lowerStem_size", this.getLowerStemSize());
-        featureSet.put("lowerStem_unpair_number", this.getLowerStemUnpairedBase_num());
-        featureSet.put("lowerStem_unpair_rate", this.getLowerStemUnpairedBase_rate());
+        
+        featureSet.put("preRNA_sequence",               this.getSeq());
+        featureSet.put("preRNA_structure",              this.getStructureStr());
+        featureSet.put("preRNA_energy",                 this.getEnergy());
+        featureSet.put("preRNA_size",                   this.getLength());
+        featureSet.put("preRNA_GC_content",             this.getGC_content() );
+        featureSet.put("preRNA_A_content",              this.getA_content());
+        featureSet.put("preRNA_U_content",              this.getU_content());
+        featureSet.put("preRNA_G_content",              this.getG_content());
+        featureSet.put("preRNA_C_content",              this.getC_content());
+        featureSet.put("preRNA_pair_number",            this.getNumberOfPairs());
+        featureSet.put("preRNA_G-U_number",             this.getGU_num());
+        featureSet.put("preRNA_unpair_number",          this.getUnpairedBase_num());
+        featureSet.put("preRNA_unpair_rate",            this.getUnpairedBase_rate());
+        featureSet.put("preRNA_internalLoop_number",    this.getInternalLoop_num());
+        featureSet.put("preRNA_internalLoop_size",      this.getInternalLoopSize());
+        featureSet.put("upperStem_start",               this.getUpperStart());
+        featureSet.put("upperStem_end",                 this.getUpperEnd());
+        featureSet.put("upperStem_size",                this.getUpperStemSize());
+        featureSet.put("lowerStem_size",                this.getLowerStemSize());
+        featureSet.put("lowerStem_unpair_number",       this.getLowerStemUnpairedBase_num());
+        featureSet.put("lowerStem_unpair_rate",         this.getLowerStemUnpairedBase_rate());
         featureSet.put("lowerStem_internalLoop_number", this.getLowerStemInternalLoop_num());
-        featureSet.put("lowerStem_internalLoop_size", this.getLowerStemInternalLoopSize());
-        featureSet.put("topStem_size", this.getTopStemSize());
-        featureSet.put("topStem_unpair_number", this.getTopStemUnpairedBase_num());
-        featureSet.put("topStem_unpair_rate", this.getTopStemUnpairedBase_rate());
-        featureSet.put("topStem_internalLoop_number", this.getTopStemInternalLoop_num());
-        featureSet.put("topStem_internalLoop_size", this.getTopStemInternalLoopSize());
+        featureSet.put("lowerStem_internalLoop_size",   this.getLowerStemInternalLoopSize());
+        featureSet.put("topStem_size",                  this.getTopStemSize());
+        featureSet.put("topStem_unpair_number",         this.getTopStemUnpairedBase_num());
+        featureSet.put("topStem_unpair_rate",           this.getTopStemUnpairedBase_rate());
+        featureSet.put("topStem_internalLoop_number",   this.getTopStemInternalLoop_num());
+        featureSet.put("topStem_internalLoop_size",     this.getTopStemInternalLoopSize());
     }
 
     public HashMap getFeatureSet(){
@@ -331,6 +356,62 @@ public class PreMiRNA extends SimpleRNASequence{
      */
     public void setUpperEnd(int upperEnd) {
         this.upperEnd = upperEnd;
+    }
+
+    /**
+     * @return the host
+     */
+    public String getHost() {
+        return host;
+    }
+
+    /**
+     * @param host the host to set
+     */
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    /**
+     * @return the host3code
+     */
+    public String getHost3code() {
+        return host3code;
+    }
+
+    /**
+     * @param host3code the host3code to set
+     */
+    public void setHost3Lettercode(String host3code) {
+        this.host3code = host3code;
+    }
+
+    /**
+     * @return the notes
+     */
+    public String getNote() {
+        return note;
+    }
+
+    /**
+     * @param notes the notes to set
+     */
+    public void setNote(String notes) {
+        this.note = notes;
+    }
+
+    /**
+     * @return the dbxrefs
+     */
+    public String getDbxrefs() {
+        return dbxrefs;
+    }
+
+    /**
+     * @param dbxrefs the dbxrefs to set
+     */
+    public void setDbxrefs(String dbxrefs) {
+        this.dbxrefs = dbxrefs;
     }
 
 

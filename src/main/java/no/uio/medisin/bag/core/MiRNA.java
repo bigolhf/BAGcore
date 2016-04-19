@@ -32,54 +32,67 @@ public class MiRNA extends SimpleRNASequence{
         super(id,seq);
     }
 
-    private int largestInternalLoop=0;
-    private int numOfInternalLoops=0;
-    private int numOfUnpairedBases=0;
-    private double fractOfUnpairedBases=0;
+    private String              host;
+    private int                 largestInternalLoop;
+    private int                 numOfInternalLoops;
+    private int                 numOfUnpairedBases;
+    private double              fractOfUnpairedBases;
 
-    private int strand;
-    private char firstBase;
-    private double stability=0;
-    private char dangleBaseOne;
-    private char dangleBaseTwo;
+    private int                 strand;
+    private char                firstBase;
+    private double              stability;
+    private char                dangleBaseOne;
+    private char                dangleBaseTwo;
 
-    private int miStart;
-    private int miEnd;
+    private int                 miStart;
+    private int                 miEnd;
 
-    private String note="";
+    private String              note="";
 
-    private HashMap featureSet;
+    private HashMap             featureSet;
 
+    
+    
+    
+    
+    /**
+     * because the list of features we might calculate can change, we also store
+     * in a hash map to make it simpler to collectively pass information
+     */    
     public void buildFeatureSet(){
         featureSet=new HashMap();
-        featureSet.put("miRNA_id", this.getId());
-        featureSet.put("miRNA_sequence", this.getSeq());
-        featureSet.put("miRNA_structure", this.getStructureStr());
-        featureSet.put("miRNA_energy", this.getEnergy());
-        featureSet.put("miRNA_size", this.getLength());
-        featureSet.put("miRNA_GC_content", this.getGC_content() );
-        featureSet.put("miRNA_A_content", this.getA_content());
-        featureSet.put("miRNA_U_content", this.getU_content());
-        featureSet.put("miRNA_G_content", this.getG_content());
-        featureSet.put("miRNA_C_content", this.getC_content());
-        featureSet.put("miRNA_pair_number", this.getNumberOfPairs());
-        featureSet.put("miRNA_G-U_number", this.getGU_num());
-        featureSet.put("miRNA_unpair_number", this.getUnpairedBase_num());
-        featureSet.put("miRNA_unpair_rate", this.getUnpairedBase_rate());
+        
+        featureSet.put("miRNA_id",                  this.getId());
+        featureSet.put("miRNA_sequence",            this.getSeq());
+        featureSet.put("miRNA_structure",           this.getStructureStr());
+        featureSet.put("miRNA_energy",              this.getEnergy());
+        featureSet.put("miRNA_size",                this.getLength());
+        featureSet.put("miRNA_GC_content",          this.getGC_content() );
+        featureSet.put("miRNA_A_content",           this.getA_content());
+        featureSet.put("miRNA_U_content",           this.getU_content());
+        featureSet.put("miRNA_G_content",           this.getG_content());
+        featureSet.put("miRNA_C_content",           this.getC_content());
+        featureSet.put("miRNA_pair_number",         this.getNumberOfPairs());
+        featureSet.put("miRNA_G-U_number",          this.getGU_num());
+        featureSet.put("miRNA_unpair_number",       this.getUnpairedBase_num());
+        featureSet.put("miRNA_unpair_rate",         this.getUnpairedBase_rate());
         featureSet.put("miRNA_internalLoop_number", this.getInternalLoop_num());
-        featureSet.put("miRNA_internalLoop_size", this.getInternalLoopSize());
-        featureSet.put("miRNA_start", this.getMiStart());
-        featureSet.put("miRNA_end", this.getMiEnd());
-        featureSet.put("miRNA_stability", this.getStability());
-        featureSet.put("miRNA_firstBase", this.getFirstBase());
-        featureSet.put("overhang_base1", this.getDangleBaseOne());
-        featureSet.put("overhang_base2", this.getDangleBaseTwo());
-        featureSet.put("strand", this.getStrand());
+        featureSet.put("miRNA_internalLoop_size",   this.getInternalLoopSize());
+        featureSet.put("miRNA_start",               this.getMiStart());
+        featureSet.put("miRNA_end",                 this.getMiEnd());
+        featureSet.put("miRNA_stability",           this.getStability());
+        featureSet.put("miRNA_firstBase",           this.getFirstBase());
+        featureSet.put("overhang_base1",            this.getDangleBaseOne());
+        featureSet.put("overhang_base2",            this.getDangleBaseTwo());
+        featureSet.put("strand",                    this.getStrand());
 
-        featureSet.put("miStart", this.getStart());
-        featureSet.put("miEnd", this.getEnd());
+        featureSet.put("miStart",                   this.getStart());
+        featureSet.put("miEnd",                     this.getEnd());
     }
 
+    
+    
+    
     public HashMap getFeatureSet(){
         return featureSet;
     }
@@ -138,20 +151,6 @@ public class MiRNA extends SimpleRNASequence{
      */
     public void setFractOfUnpairedBases(double unpairedBase_rate) {
         this.fractOfUnpairedBases = unpairedBase_rate;
-    }
-
-    /**
-     * @return the strand
-     */
-    public int getStrand() {
-        return strand;
-    }
-
-    /**
-     * @param strand the strand to set
-     */
-    public void setStrand(int strand) {
-        this.strand = strand;
     }
 
     /**
@@ -250,6 +249,20 @@ public class MiRNA extends SimpleRNASequence{
      */
     public void setNote(String note) {
         this.note = note;
+    }
+
+    /**
+     * @return the host
+     */
+    public String getHost() {
+        return host;
+    }
+
+    /**
+     * @param host the host to set
+     */
+    public void setHost(String host) {
+        this.host = host;
     }
 
 }
