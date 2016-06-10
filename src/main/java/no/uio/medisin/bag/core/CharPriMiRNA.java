@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
  * @author weibo and Simon Rayner
  * 
  */
-public class CharacterizedPriMiRNA {
+public class CharPriMiRNA {
     
     static Logger logger = LogManager.getRootLogger();    
 
@@ -63,7 +63,7 @@ public class CharacterizedPriMiRNA {
 
     
     
-    public CharacterizedPriMiRNA(PriMiRNA pri){
+    public CharPriMiRNA(PriMiRNA pri){
         
         priRNA = pri;
         
@@ -74,36 +74,35 @@ public class CharacterizedPriMiRNA {
     /**
      * parse features of pri-miRNA
      */
-    public void parsePrimiRNA(){
+    public void characterize(){
 
-        parsePriStr(priRNA);
+        parsePrimiRNAStructureString(getPriRNA());
 
-        priStructLine1 = priRNA.getPriLine1();
-        priStructLine2 = priRNA.getPriLine2();
-        priStructLine3 = priRNA.getPriLine3();
-        priStructLine4 = priRNA.getPriLine4();
+        priStructLine1 = getPriRNA().getPriLine1();
+        priStructLine2 = getPriRNA().getPriLine2();
+        priStructLine3 = getPriRNA().getPriLine3();
+        priStructLine4 = getPriRNA().getPriLine4();
         
         //nucleotide content
-        priRNA.setGC_content(GCcontent(priRNA.getSeq()));
-        priRNA.setA_content(NTcontent(priRNA.getSeq(), 'A') + NTcontent(priRNA.getSeq(), 'a'));
-        priRNA.setU_content(NTcontent(priRNA.getSeq(), 'U') + NTcontent(priRNA.getSeq(), 'u'));
-        priRNA.setG_content(NTcontent(priRNA.getSeq(), 'G') + NTcontent(priRNA.getSeq(), 'g'));
-        priRNA.setC_content(NTcontent(priRNA.getSeq(), 'C') + NTcontent(priRNA.getSeq(), 'c'));
-        priRNA.setNumberOfGUPairs(CountRNAFoldGUpairs(priStructLine2, priStructLine3));
-        priRNA.setNumberOfPairedBases(pairCount(priStructLine2));
+        getPriRNA().setGC_content(GCcontent(getPriRNA().getSeq()));
+        getPriRNA().setA_content(NTcontent(getPriRNA().getSeq(), 'A') + NTcontent(getPriRNA().getSeq(), 'a'));
+        getPriRNA().setU_content(NTcontent(getPriRNA().getSeq(), 'U') + NTcontent(getPriRNA().getSeq(), 'u'));
+        getPriRNA().setG_content(NTcontent(getPriRNA().getSeq(), 'G') + NTcontent(getPriRNA().getSeq(), 'g'));
+        getPriRNA().setC_content(NTcontent(getPriRNA().getSeq(), 'C') + NTcontent(getPriRNA().getSeq(), 'c'));
+        getPriRNA().setNumberOfGUPairs(CountRNAFoldGUpairs(priStructLine2, priStructLine3));
+        getPriRNA().setNumberOfPairedBases(pairCount(priStructLine2));
 
         //priRNA unpaired base do not include basal part and terminalloop
-        priRNA.setNumberOfUnpairedBasesInStem(this.countNumberOfUnpairedBasesInStem());
-        priRNA.setNumberOfUnpairedBasesInStem(unpairedCount(priStructLine1,priStructLine4) - priRNA.getBasalBaseNum() -
-                (priRNA.getTerminalLoopSeq().length() - priRNA.getMidBase().length()));
-        priRNA.setunpairedBaseRate(calcUnpairedRate(
-                priRNA.getNumberOfUnpairedBasesInStem(), priRNA.getNumberOfPairs()));
+        getPriRNA().setNumberOfUnpairedBasesInStem(this.countNumberOfUnpairedBasesInStem());
+        getPriRNA().setNumberOfUnpairedBasesInStem(unpairedCount(priStructLine1,priStructLine4) - getPriRNA().getBasalBaseNum() -
+                (getPriRNA().getTerminalLoopSeq().length() - getPriRNA().getMidBase().length()));
+        getPriRNA().setunpairedBaseRate(calcUnpairedRate(getPriRNA().getNumberOfUnpairedBasesInStem(), getPriRNA().getNumberOfPairs()));
 
         //priRNA internal loops DO NOT include basal part or the Terminal Loop
-        priRNA.setInternalLoop_num(internalLoopCount(priStructLine2));
-        priRNA.setInternalLoopSize(findLargestInternalLoopOnStem(priStructLine1, priStructLine4));
+        getPriRNA().setInternalLoop_num(internalLoopCount(priStructLine2));
+        getPriRNA().setInternalLoopSize(findLargestInternalLoopOnStem(priStructLine1, priStructLine4));
 
-        priRNA.buildFeatureSet();
+        getPriRNA().buildFeatureSet();
     }
 
     
@@ -122,17 +121,17 @@ public class CharacterizedPriMiRNA {
         preRNA = new PreMiRNA();
         miRNA = new MiRNAFeature();
 
-        int strand=findStrand(priRNA, miRStartPos, miRLength);
+        int strand=findStrand(getPriRNA(), miRStartPos, miRLength);
         int upperStart=0, upperEnd=0;
-        int[] strIndex=priRNA.getStrIndex();
+        int[] strIndex=getPriRNA().getStrIndex();
         
-        String midBase=priRNA.getMidBase();
-        int basalEnd=priRNA.getBasalSegEnd();//count from 1
+        String midBase=getPriRNA().getMidBase();
+        int basalEnd=getPriRNA().getBasalSegEnd();//count from 1
 
-        priStructLine1=priRNA.getPriLine1();
-        priStructLine2=priRNA.getPriLine2();
-        priStructLine3=priRNA.getPriLine3();
-        priStructLine4=priRNA.getPriLine4();
+        priStructLine1=getPriRNA().getPriLine1();
+        priStructLine2=getPriRNA().getPriLine2();
+        priStructLine3=getPriRNA().getPriLine3();
+        priStructLine4=getPriRNA().getPriLine4();
         String preMiRNAStructLine1;
         String preMiRNAStructLine2;
         String preMiRNAStructLine3;
@@ -166,7 +165,7 @@ public class CharacterizedPriMiRNA {
 
         // all positions below count from 1
 
-        priRNA.setPriPlot(generatePrettyPlotShowingMiRNA(priRNA,upperStart,upperEnd, strand));
+        getPriRNA().setPriPlot(generatePrettyPlotShowingMiRNA(getPriRNA(),upperStart,upperEnd, strand));
 
         // set candidate pre-miRNA parameters
         preMiRNAStructLine1 = priStructLine1.substring(upperStart);
@@ -178,7 +177,7 @@ public class CharacterizedPriMiRNA {
         preRNA.setSeq(PrettyPlot2Seq(preMiRNAStructLine1, preMiRNAStructLine2) + midBase + reverse(PrettyPlot2Seq(preMiRNAStructLine4, preMiRNAStructLine3)));
         preRNA.setLength(preRNA.getSeq().length());
         preRNA.setAbsStartInQuerySeq(PrettyPlot2Seq(priStructLine1.substring(0, upperStart), priStructLine2.substring(0, upperStart)).length());
-        preRNA.setEnergy(calculatePreMFE(priRNA.getStructureStr(), preRNA.getSeq(), preRNA.getStart()));
+        preRNA.setEnergy(calculatePreMFE(getPriRNA().getStructureStr(), preRNA.getSeq(), preRNA.getStart()));
         
         preRNA.setGC_content(GCcontent(preRNA.getSeq()));
         preRNA.setA_content(NTcontent(preRNA.getSeq(),'A')+NTcontent(preRNA.getSeq(),'a'));
@@ -191,7 +190,7 @@ public class CharacterizedPriMiRNA {
         preRNA.setNumberOfPairedBases(pairCount(preMiRNAStructLine2));
         
         //preRNA unpaired bases, do not include terminal loop bases
-        preRNA.setNumberOfUnpairedBases(unpairedCount(preMiRNAStructLine1, preMiRNAStructLine4) - (priRNA.getTerminalLoopSize() - midBase.length()));
+        preRNA.setNumberOfUnpairedBases(unpairedCount(preMiRNAStructLine1, preMiRNAStructLine4) - (getPriRNA().getTerminalLoopSize() - midBase.length()));
         preRNA.setUnpairedBaseRate(calcUnpairedRate(preRNA.getUnpairedBase_num(), preRNA.getNumberOfPairs()));
         
         //preRNA internal loop, do not include terminal loop
@@ -221,7 +220,7 @@ public class CharacterizedPriMiRNA {
         
         
         //set topStem parameters
-        int stemEnd = strIndex[priRNA.getTerminalLoopStart()-1];//count from 1
+        int stemEnd = strIndex[getPriRNA().getTerminalLoopStart()-1];//count from 1
         if (upperEnd + 1 < stemEnd) {
             topStemStructLine1 = priStructLine1.substring(upperEnd + 1, stemEnd);
             topStemStructLine2 = priStructLine2.substring(upperEnd + 1, stemEnd);
@@ -245,7 +244,7 @@ public class CharacterizedPriMiRNA {
         miRStructLine3 = priStructLine3.substring(upperStart, upperEnd + 1);
         miRStructLine4 = priStructLine4.substring(upperStart, upperEnd + 1);
         
-        miRNA.setSeq(priRNA.getSeq().substring(miRStartPos, miRStartPos + miRLength));
+        miRNA.setSeq(getPriRNA().getSeq().substring(miRStartPos, miRStartPos + miRLength));
         miRNA.setLength(miRNA.getSeq().length());
         miRNA.setGC_content(GCcontent(miRNA.getSeq()));
 
@@ -264,10 +263,10 @@ public class CharacterizedPriMiRNA {
         miRNA.setNumOfInternalLoops(internalLoopCount(miRStructLine2));
         miRNA.setLargestInternalLoop(findLargestInternalLoopOnStem(miRStructLine1, miRStructLine4));
 
-        miRNA.setFirstBase(priRNA.getSeq().charAt(miRStartPos));
+        miRNA.setFirstBase(getPriRNA().getSeq().charAt(miRStartPos));
         miRNA.setStartPos(miRStartPos + 1);
         miRNA.setEndPos(miRStartPos + miRLength);
-        miRNA.setAbsStartInQuerySeq(miRStartPos + priRNA.getStart()); // <- what is this start pos?? position within the full sequence I think
+        miRNA.setAbsStartInQuerySeq(miRStartPos + getPriRNA().getStart()); // <- what is this start pos?? position within the full sequence I think
         miRNA.setAbsEndInQuerySeq(miRNA.getStart() + miRLength - 1);
         miRNA.setLength(miRLength);
         miRNA.setStrand(String.valueOf(strand));
@@ -284,7 +283,7 @@ public class CharacterizedPriMiRNA {
 
         miRNA.setStability(stability(miRStructLine2, miRStructLine3, strand));
 
-        miRNA.setName(priRNA.getName());
+        miRNA.setName(getPriRNA().getName());
         miRNA.setID(miRNA.getName() + "_MIR_" + miRNA.getStart()
                 + "-" + miRNA.getLength());
 
@@ -333,7 +332,7 @@ public class CharacterizedPriMiRNA {
      * @return boolean
      * 
      */
-    public boolean parsePriStr(PriMiRNA priRNA){
+    public boolean parsePrimiRNAStructureString(PriMiRNA priRNA){
         
         StemLoopMatch = stemLoopPattern.matcher(priRNA.getStructureStr());
 
@@ -562,8 +561,8 @@ public class CharacterizedPriMiRNA {
      */
     public int countNumberOfUnpairedBasesInStem(){
         return unpairedCount(priStructLine1,priStructLine4) 
-          - priRNA.getBasalBaseNum() 
-          - (priRNA.getTerminalLoopSeq().length() - priRNA.getMidBase().length());
+          - getPriRNA().getBasalBaseNum() 
+          - (getPriRNA().getTerminalLoopSeq().length() - getPriRNA().getMidBase().length());
     }
     
     /**
@@ -937,13 +936,27 @@ public class CharacterizedPriMiRNA {
 
         HashMap tripletFeatures=new HashMap();
 
-        tripletFeatures.putAll(priRNA.getFeatureSet());
-        tripletFeatures.put("plot", priRNA.getPriPlot());
+        tripletFeatures.putAll(getPriRNA().getFeatureSet());
+        tripletFeatures.put("plot", getPriRNA().getPriPlot());
         tripletFeatures.putAll(preRNA.getFeatureSet());
         tripletFeatures.putAll(miRNA.getFeatureSet());
 
 
         return tripletFeatures;
+    }
+
+    /**
+     * @return the priRNA
+     */
+    public PriMiRNA getPriRNA() {
+        return priRNA;
+    }
+
+    /**
+     * @param priRNA the priRNA to set
+     */
+    public void setPriRNA(PriMiRNA priRNA) {
+        this.priRNA = priRNA;
     }
 
 

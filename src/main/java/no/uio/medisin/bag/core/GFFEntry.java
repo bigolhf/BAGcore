@@ -67,7 +67,7 @@ public class GFFEntry implements Comparable<GFFEntry>{
     
     
 
-    public GFFEntry(String line){
+    public GFFEntry(String line) throws RuntimeException{
         
         try{
             refSeqID    = line.split("\t")[GFF_SEQID];
@@ -75,9 +75,9 @@ public class GFFEntry implements Comparable<GFFEntry>{
             type        = line.split("\t")[GFF_TYPE];
         }
         catch(Exception ex){
-            logger.error("exception while parsing seqID/src/type values in GFF entry" + line);
+            logger.error("exception while parsing seqID/src/type values in GFF entry: " + line);
             logger.error(ex);
-            //throw new Exception("exception while parsing seqID/src/type values in GFF entry" + line);
+            throw new RuntimeException("exception while parsing seqID/src/type values in GFF entry" + line);
         }
         try{
             start   = Integer.parseInt(line.split("\t")[GFF_START]);
@@ -88,7 +88,7 @@ public class GFFEntry implements Comparable<GFFEntry>{
             logger.error(ex);      
             start = -1;
             stop  = -1;
-            //throw new Exception("exception while parsing seqID/src/type values in GFF entry" + line);
+            throw new RuntimeException("exception while parsing seqID/src/type values in GFF entry" + line);
         }
         try{
             score   = Float.parseFloat(line.split("\t")[GFF_SCORE]);
@@ -176,7 +176,21 @@ public class GFFEntry implements Comparable<GFFEntry>{
  
     
     
-
+    
+    /**
+     * check whether the supplied line is a comment line (begins with '#')
+     * 
+     * @param line
+     * @return 
+     */
+    public static Boolean isCommentLine(String line){
+        return line.startsWith("#");
+    }
+     
+    
+    
+    
+    
     /**
      * compare by refSeq, strand and then position
      * 

@@ -20,17 +20,18 @@ import org.apache.logging.log4j.Logger;
  * noRepeat();
  * @author weibo & simon rayner
  */
-public class StemLoopScanner {
+public class FoldableRNASequence extends SimpleRNASequence{
     
     static Logger logger = LogManager.getRootLogger();    
+    
+    private static final int        MIN_FRAGMENT_SIZE   = 19;
 
-    private int window=500;
-    private int step=250;
-    private int start=1;
-    private int minHairpinLength = 60;
-    private Boolean defaultParams = true;
+    //private int                     window=500;
+    //private int                     step=250;
+    //private int                     start=1;
+    private int                     minHairpinLength = 20;
 
-    private SimpleSeq               simpleSeq;
+    //private SimpleSeq               simpleSeq;
     
     private ArrayList<SimpleSeq>    fragmentList;
     private ArrayList<PriMiRNA>     primiRNAList;
@@ -40,14 +41,8 @@ public class StemLoopScanner {
       
       This can be broken down into
      
-      {'('} + {zero or more '.' or '('} + {stem loop} + {zero or more '.' or ')'} + {')'}
-    
-      see 
-    
-    
+        {'('} + {zero or more '.' or '('} + {stem loop} + {zero or more '.' or ')'} + {')'}
     */
-
-    
     private static String regSL="(\\.*\\([\\.\\(]*\\()(\\.+)(\\)[\\.\\)]*\\)\\.*)";
     private static Pattern pattern = Pattern.compile(regSL);
     private Matcher m;
@@ -57,7 +52,7 @@ public class StemLoopScanner {
      * Empty Class Constructor
      * 
      */
-    public StemLoopScanner(){
+    public FoldableRNASequence(){
         
     }
     
@@ -68,138 +63,26 @@ public class StemLoopScanner {
      * 
      * @param seq 
      */
-    public StemLoopScanner(SimpleSeq seq){
-        simpleSeq = seq;
-    }
-    
-    
-    
-    /**
-     * Class constructor from subsequence of input sequence
-     * Allows the user to instruct the class to break the sequence
-     * into smaller fragments Useful for long sequences which are 
-     * likely to return avoid complex full length structures
-     * 
-     * 
-     * @param seq
-     * @param window
-     * @param step
-     * @param distance 
-     */
-    public StemLoopScanner(SimpleSeq seq, int window, int step, int distance){
-        
-        this.simpleSeq          = seq;
-        this.window             = window;
-        this.step               = step;
-        this.minHairpinLength   = distance;
-        this.defaultParams      = false;
-    }
-    
-
-    /**
-     * 
-     * slide window with given step size to generate a serial of segments for testing.
-     * before calling, one may set the sliding window size, step increment and start position
-     * 
-     * It seems this should be removed as this is already implemented in the Pipeline class
-     * @author sr 
-     */
-    public void breakQuerySeqIntoOverlappingFragments(){
-        
-        if(defaultParams)
-            logger.info("no parameters specified in constructor: using default values");
-     
-        fragmentList = new ArrayList<SimpleSeq>();
-        int length=simpleSeq.getLength();
-        int n=(length-window)/step;
-        if(n<0) n=0;
-        if(length-n*step+window>19) n+=1;
-        int end=0;start=0;
-        for(int i=0;i<=n;i++){
-            
-            if(start>=length) break;
-            end = start + window;
-            if(end>length) end=length;
-            String id = simpleSeq.getName() + "_" + (start+1) + "-"+end;
-            String subseq = simpleSeq.getSeq().substring(start,end);
-
-            SimpleSeq frag = new SimpleSeq(id,subseq);
-            frag.setAbsStartInQuerySeq(start+1);// count from 1
-            frag.setAbsEndInQuerySeq(end); //count from 1
-            frag.setName(simpleSeq.getId());
-            fragmentList.add(frag);
-            start+= step;
-            
-        }
+    public FoldableRNASequence(SimpleSeq seq){
+        super(seq);
         
     }
     
-
-    /**
-     * 
-     * generate a list of candidate pri-miRNAs from all the fragments
-     * 
-     */
-    public ArrayList<PriMiRNA> foldAndScanForStemloopByFragments(){
-        
-        fragmentList = new ArrayList<SimpleSeq>();
-
-        int length=simpleSeq.getLength();
-        int n=(length-window)/step+1;
-        if(n<1) n=1;
-        if(length-((n-1)*step+window)>19) n+=1;  // I think this must be to stop scanning fragments that are closer together than one miRNA
-
-        
-        int end=0; start=0;
-        for(int i=0;i<n;i++){
-            
-            if(start>=length) break;
-            end = start + window;
-            if(end>length) end=length;
-            String id = simpleSeq.getName() + "_" + (start+1) + "-"+end;
-            String subseq = simpleSeq.getSeq().substring(start,end);
-
-            SimpleSeq frag = new SimpleSeq(id,subseq);
-            frag.setAbsStartInQuerySeq(start+1);// count from 1
-            frag.setAbsEndInQuerySeq(end); //count from 1
-            frag.setName(simpleSeq.getId());
-            fragmentList.add(frag);
-            start+= step;
-            
-        }
-        
-        primiRNAList = new ArrayList<PriMiRNA>();
-        
-        int i=1;
-        for(SimpleSeq frag : fragmentList){
-            logger.info("SL: scan region " + (frag.getStart()) + "-" + frag.getEnd() + "...");
-            ArrayList<PriMiRNA> fragPriMiRNAList = foldAndScanSequenceForStemloop(frag);
-            String se= "AAGCUGGCAUUCUAUAUAAGAGAGAAACUACACGCAGCGCCUCAUUUUGUGGGUCA"
-              + "CCAUAUUCUUGGGAACAAGAGCUACAGCAUGGGGCAAAUCUUUCUGUUCCCAAUCCUCUGGGA"
-              + "UUCUUUCCCGAUCACCAGUUGGACCCUGCGUUUGGAGCCAACUCAAACAAUCCAGAUUGGGAC"
-              + "UUCAACCCCAACAAGGAUCACUGGCCAGAGGCAAAUCAGGUAGGAGCGGGAGCAUUCGGGCCA"
-              + "GGGUUCACCCC";
-            logger.info("SLEE:" + MfeFoldRNA.foldSequence(se));
-            logger.info("   " + fragPriMiRNAList.size() + " pri-miRNA were found");
-            primiRNAList.addAll(fragPriMiRNAList);
-//            System.out.print(OutputMiRNAPredictions.decimal(i*100.0/fragmentList.size())+"%"+OutputMiRNAPredictions.backspace(OutputMiRNAPredictions.decimal(i*100.0/fragmentList.size())+"%"));
-            i++;
-        }
-
-        return primiRNAList;
-    }
     
+    
+    
+
     /**
-     * Fold query sequence and scan resulting structure for hairpin structure
+     * Fold the sequence and scan resulting structure for a hairpin
      * @param seq
      * @return 
      */
-    public ArrayList<PriMiRNA> foldAndScanSequenceForStemloop(SimpleSeq seq){
-        SimpleRNASequence rna = new SimpleRNASequence(seq);
+    public ArrayList<PriMiRNA> foldAndScanSequence(){
+        
+        //SimpleRNASequence rna = new SimpleRNASequence(this.getSimpleSequence());
+        foldRNASequence();
 
-        foldRNASequence(rna);
-
-        return extractHairpinsFromBracketNotation(rna);
+        return extractHairpinsFromBracketNotation();
     }
 
     
@@ -225,19 +108,35 @@ public class StemLoopScanner {
     
     /**
      * 
+     * fold an RNA sequence using RNAFold and return predicted structure
+     * in Vienna Bracket Notation
+     * 
+     */
+    public void foldRNASequence(){
+                
+        this.setEnergy(MfeFoldRNA.foldSequence(this.getSeq()));
+        this.setStructureString(MfeFoldRNA.getStructure());
+        logger.info("Energy" + this.getEnergy());
+
+    }
+
+    
+    
+    
+    /**
+     * 
      * extract hairpins from a rna secondary structure defined using the 
      * Vienna Bracket Notation
      * 
-     * @param rnaStructure - SimpleRNASequence (with predicted secondary structure) 
      * 
      * @return ArrayList<@link{PriMiRNA}> list of PrimiRNA sequences
      * 
      */
-    public ArrayList<PriMiRNA> extractHairpinsFromBracketNotation(SimpleRNASequence rnaStructure){
+    public ArrayList<PriMiRNA> extractHairpinsFromBracketNotation(){
         
-        ArrayList<PriMiRNA> primiRNAList=new ArrayList<PriMiRNA>();
+        ArrayList<PriMiRNA> thisPrimiRNAList=new ArrayList<>();
         
-        String str = rnaStructure.getStructureStr(); 
+        String str = this.getStructureStr(); 
         m = pattern.matcher(str);
 
         while(m.find()){
@@ -275,8 +174,8 @@ public class StemLoopScanner {
                 slEnd=m.end(3);//count from 1
             }
             
-            String subId    = rnaStructure.getName()+"_mir_"; //the id of the stemloop
-            String subSeq   = rnaStructure.getSeq().substring(slStart, slEnd); //seq of the stemloop
+            String subId    = this.getName()+"_mir_"; //the id of the stemloop
+            String subSeq   = this.getSeq().substring(slStart, slEnd); //seq of the stemloop
             String subStr   = left + m.group(2) + right; //structure of the stemloop
 
 
@@ -290,16 +189,16 @@ public class StemLoopScanner {
             if(hasMultipleLoops(pri)) continue;
             if(pattern.matcher(pri.getStructureStr()).matches() == false) continue;
             
-            pri.setName(rnaStructure.getName());
-            pri.setAbsStartInQuerySeq(slStart+rnaStructure.getStart());
-            pri.setAbsEndInQuerySeq(slEnd-1+rnaStructure.getStart());
+            pri.setName(this.getName());
+            pri.setAbsStartInQuerySeq(slStart+this.getStart());
+            pri.setAbsEndInQuerySeq(slEnd-1+this.getStart());
             pri.setID(pri.getId()+pri.getStart()+"-"+pri.getEnd());
             
-            primiRNAList.add(pri);
+            thisPrimiRNAList.add(pri);
 
             
         }
-        return primiRNAList;
+        return thisPrimiRNAList;
     }
 
     
@@ -390,62 +289,6 @@ public class StemLoopScanner {
     }
 
     /**
-     * @return the window
-     */
-    public int getWindow() {
-        return window;
-    }
-
-    /**
-     * @param window the window to set
-     */
-    public void setWindow(int window) {
-        this.window = window;
-    }
-
-    /**
-     * @return the step
-     */
-    public int getStep() {
-        return step;
-    }
-
-    /**
-     * @param step the step to set
-     */
-    public void setStep(int step) {
-        this.step = step;
-    }
-
-    /**
-     * @return the start
-     */
-    public int getStart() {
-        return start;
-    }
-
-    /**
-     * @param start the start to set
-     */
-    public void setStart(int start) {
-        this.start = start;
-    }
-
-    /**
-     * @return the sequence
-     */
-    public SimpleSeq getSequence() {
-        return simpleSeq;
-    }
-
-    /**
-     * @param sequence the sequence to set
-     */
-    public void setSequence(SimpleSeq sequence) {
-        this.simpleSeq = sequence;
-    }
-
-    /**
      * @return the cutoff
      */
     public int getDistance() {
@@ -453,10 +296,10 @@ public class StemLoopScanner {
     }
 
     /**
-     * @param cutoff the cutoff to set
+     * @param minHairpinLen: shortest hairpin to pass
      */
-    public void setDistance(int distance) {
-        this.minHairpinLength = distance;
+    public void setMinHairpinLength(int minHairpinLen) {
+        this.minHairpinLength = minHairpinLen;
     }
 
     /**

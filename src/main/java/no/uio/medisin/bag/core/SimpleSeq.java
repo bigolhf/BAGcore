@@ -5,6 +5,8 @@
 
 package no.uio.medisin.bag.core;
 
+import java.util.ArrayList;
+
 /**
  * a simple sequence object that contains some basic functionality
  * and stores basic sequence features
@@ -32,6 +34,19 @@ public class SimpleSeq {
 
     }
     
+    public SimpleSeq(SimpleSeq nSimpleSeq){
+        this.chromosome         = nSimpleSeq.chromosome;
+        this.accessionNumber    = nSimpleSeq.accessionNumber;
+        this.strand             = nSimpleSeq.strand;
+        this.start              = nSimpleSeq.start;
+        this.end                = nSimpleSeq.end;
+        this.length             = nSimpleSeq.length;
+        this.name               = nSimpleSeq.name;
+        this.id                 = nSimpleSeq.id;
+        this.seq                = nSimpleSeq.seq;
+    }
+    
+    
     
     /**
      * Constructor 
@@ -40,10 +55,10 @@ public class SimpleSeq {
      * @param seq 
      */
     public SimpleSeq(String id,String seq){
-        
-        this.id=id;
-        this.seq=seq;
-        this.length=seq.length();
+        this.name   = id;
+        this.id     = id;
+        this.seq    = seq;
+        this.length = seq.length();
         
     }
     
@@ -193,6 +208,44 @@ public class SimpleSeq {
         return n;
     }
     
+    
+    
+    
+    
+    /**
+     * split the sequence into fragments according to specified step and window size
+     * 
+     * @param step
+     * @param window
+     * @return 
+     */
+    public ArrayList<SimpleSeq> splitSequence(int step, int window){
+        
+        ArrayList<SimpleSeq> fragmentList = new ArrayList<>();
+        length=seq.length();
+        int n=(length-window)/step+1;
+        if(n<1) n=1;
+
+        int fragStart=0;
+        int fragEnd; 
+        for(int i=0;i<n;i++){
+            
+            if(fragStart>=length) break;
+            fragEnd = fragStart + window;
+            if(fragEnd>length) fragEnd=length;
+            String fragID = name + "_" + (fragStart+1) + "-"+fragEnd;
+            String subseq = seq.substring(fragStart,fragEnd);
+
+            SimpleSeq frag = new SimpleSeq(fragID,subseq);
+            frag.setAbsStartInQuerySeq(fragStart+1);// count from 1
+            frag.setAbsEndInQuerySeq(fragEnd); //count from 1
+            frag.setName(fragID);
+            fragmentList.add(frag);
+            fragStart+= step;
+            
+        }
+        return fragmentList;
+    }
     
     
     

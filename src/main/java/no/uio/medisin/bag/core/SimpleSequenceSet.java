@@ -5,7 +5,6 @@
 
 package no.uio.medisin.bag.core;
 
-import no.uio.medisin.bag.core.SimpleSeq;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -27,7 +26,6 @@ public class SimpleSequenceSet {
     private File                        fastaFilename;
     private BufferedReader              brFA;
     private ArrayList<SimpleSeq>        seqs;
-    private double                      progress=0;
 
     
     

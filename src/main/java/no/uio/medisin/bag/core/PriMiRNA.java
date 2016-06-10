@@ -1,11 +1,11 @@
 
 package no.uio.medisin.bag.core;
 
-import no.uio.medisin.bag.core.PreMiRNA;
-import no.uio.medisin.bag.core.CharacterizedPriMiRNA;
-import no.uio.medisin.bag.core.SimpleRNASequence;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Contains additional parameters which serve to characterize the pri-miRNA
@@ -75,7 +75,7 @@ public class PriMiRNA extends SimpleRNASequence{
         featureSet.put("priRNA_structure", this.getStructureStr());
         featureSet.put("priRNA_energy", this.getEnergy());
         featureSet.put("priRNA_size", this.getLength());
-        featureSet.put("priRNA_plot", CharacterizedPriMiRNA.setStrPlot(this));
+        featureSet.put("priRNA_plot", CharPriMiRNA.setStrPlot(this));
         featureSet.put("priRNA_GC_content", this.getGC_content() );
         featureSet.put("priRNA_A_content", this.getA_content());
         featureSet.put("priRNA_U_content", this.getU_content());
@@ -91,7 +91,60 @@ public class PriMiRNA extends SimpleRNASequence{
         featureSet.put("basalSegment_end", this.getBasalSegEnd());
         featureSet.put("terminalLoop_size", this.getTerminalLoopSize());
     }
-
+    
+    
+    
+    
+    /**
+     * get the key values as a tab delimited string
+     * 
+     * @return 
+     */
+    public String printFeatureSetKeysAsTSV(){
+        String featureKeyStr = "NAME|ID:\t";
+        Set set = featureSet.entrySet();
+        Iterator itSet = set.iterator();
+        
+        while(itSet.hasNext()){
+            Map.Entry me = (Map.Entry)itSet.next();
+            featureKeyStr = featureKeyStr.concat((String)me.getKey() + "\t");
+            
+        }
+        return featureKeyStr.trim();
+        
+    }
+    
+    
+    
+    
+    /**
+     * print this pri-miRNA's features as a tab delimited string
+     * 
+     * @return 
+     */
+    public String printFeatureSetValuesAsTSV(){
+        
+        String featureValueStr = this.getId() + "|" + this.getName() + "\t";
+        Set set = featureSet.entrySet();
+        Iterator itSet = set.iterator();
+        
+        while(itSet.hasNext()){
+            Map.Entry me = (Map.Entry)itSet.next();
+            featureValueStr = featureValueStr.concat(me.getValue() + "\t");
+            
+        }
+        return featureValueStr.trim();
+    }
+    
+    
+    
+    
+    
+    /**
+     * get the FeatureSet
+     * 
+     * @return 
+     */
     public HashMap getFeatureSet(){
         return featureSet;
     }

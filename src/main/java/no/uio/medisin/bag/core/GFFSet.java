@@ -46,13 +46,14 @@ public class GFFSet {
      * 
      * @throws IOException
      */
-    public int readGFF(String filename) throws IOException{
+    public int readGFF(String filename) throws IOException, RuntimeException{
         String line = null;
         int lineCount = 0;
         try{
             BufferedReader br = new BufferedReader(new FileReader(new File(filename)));
             while ((line = br.readLine()) != null) {
-                this.addEntry(new GFFEntry(line));
+                if(GFFEntry.isCommentLine(line)==false) 
+                    this.addEntry(new GFFEntry(line));
                 lineCount ++;
             }
         }

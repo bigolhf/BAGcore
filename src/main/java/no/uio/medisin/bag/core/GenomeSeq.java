@@ -11,6 +11,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * specifies a set of reference sequences for a genome, typically a set of 
@@ -19,9 +21,12 @@ import java.util.Iterator;
  * @author simonray
  */
 public class GenomeSeq {
+    
+    static Logger logger = LogManager.getRootLogger();    
+
     private String genomeName;
     private ArrayList<SimpleSeq> genomeSeq = new ArrayList<>();
-    private int noOfBases;
+    private long noOfBases;
     
     
     public GenomeSeq(String name){
@@ -60,13 +65,15 @@ public class GenomeSeq {
                 totalBases+= line.length()+1;
                 if(line.startsWith(">")==true){
                     genomeSeq.add(new SimpleSeq(headerLine, seq.toString()));
-                    noOfBases += seq.toString().length();
+                    noOfBases += seq.length();
+                    logger.info(noOfBases + ":\t" + line);
                     headerLine = line.substring(1, line.length());
                     seq = new StringBuilder();
                 }
                 else{
                     line=line.replaceAll("\\s+", "").toUpperCase();
                     seq.append(line);
+                    
                 }
             }
             genomeSeq.add(new SimpleSeq(headerLine, seq.toString()));
@@ -134,7 +141,7 @@ public class GenomeSeq {
     /**
      * @return the noOfBases
      */
-    public int getNoOfBases() {
+    public long getNoOfBases() {
         return noOfBases;
     }
     

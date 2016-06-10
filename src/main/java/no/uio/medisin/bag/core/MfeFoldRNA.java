@@ -11,19 +11,32 @@ import org.apache.logging.log4j.Logger;
 public class MfeFoldRNA {
 
     static Logger                       logger = LogManager.getLogger();
+    
+    private String pathToLibrary;
     private static native float fold(String seq, float t);
     private static native void initIDs();
     
+    
     static{
-
-        System.loadLibrary("RNAFold");
+        if(System.getProperty("os.name").toUpperCase().contains("MAC")){
+            System.loadLibrary("RNAFold");            
+        }else{
+            if(System.getProperty("os.name").toUpperCase().contains("LINUX")){
+                System.loadLibrary("RNAFold");                        
+            }else
+            {
+                logger.info("unsupported OS: <" + System.getProperty("os.name") + ">");
+                logger.error("unsupported OS: <" + System.getProperty("os.name") + ">");
+                throw new RuntimeException("unsupported OS: <" + System.getProperty("os.name") + ">");
+            }
+        }
         
 	initIDs();
         
     }
 
-    private static final float temperature=37;
-    private static String structure="";
+    private static final float  temperature=37;
+    private static String       structure="";
 
 
 
